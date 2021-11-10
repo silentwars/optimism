@@ -174,9 +174,7 @@ describe('Fee Payment Integration Tests', async () => {
     )
 
     // Submit the withdrawal.
-    const withdrawTx = await env.sequencerFeeVault.withdraw({
-      gasPrice: 0, // Need a gasprice of 0 or the balances will include the fee paid during this tx.
-    })
+    const withdrawTx = await env.sequencerFeeVault.withdraw()
 
     // Wait for the withdrawal to be relayed to L1.
     await env.waitForXDomainTransaction(withdrawTx, Direction.L2ToL1)
