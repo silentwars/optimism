@@ -8,6 +8,21 @@ import { getContractFactory } from '../src/contract-defs'
 import { getDeployedContractArtifact } from '../src/contract-deployed-artifacts'
 import { getInput, color as c } from '../src/task-utils'
 
+const printComparison = (
+  action: string,
+  description: string,
+  value1: string,
+  value2: string
+) => {
+  console.log(action + ':')
+  if (hexStringEquals(value1, value2)) {
+    console.log(c.green(`${description} looks good! 😎`))
+  } else {
+    throw new Error(`${description} looks wrong`)
+  }
+  console.log() // Add some whitespace
+}
+
 task('validate:address-dictator')
   // Provided by the signature Requestor
   .addParam(
@@ -55,44 +70,39 @@ Chain ID: ${network.chainId}`
     }
     console.log()
 
-    console.log(
-      'Verifying AddressDictator source code against local artifacts:'
-    )
+    // TODO: compare args.dictator to dictatorArtifact.address
+
     const dictatorArtifact = getDeployedContractArtifact(
       'AddressDictator',
       network.name
     )
-
-    // TODO: compare args.dictator to dictatorArtifact.address
     const dictatorCode = await provider.getCode(args.dictator)
-    if (hexStringEquals(dictatorArtifact.deployedBytecode, dictatorCode)) {
-      console.log(c.green('Deployed dictator code Looks good! 😎'))
-    } else {
-      throw new Error('Deployed AddressDictator code looks wrong')
-    }
-    console.log()
+    printComparison(
+      'Verifying AddressDictator source code against local artifacts',
+      'Deployed AddressDictator code',
+      dictatorArtifact.deployedBytecode,
+      dictatorCode
+    )
 
     const dictatorContract = getContractFactory('AddressDictator')
       .attach(args.dictator)
       .connect(provider)
 
-    console.log('Validating the finalOwner address in the dictator:')
     const finalOwner = await dictatorContract.finalOwner()
-    if (hexStringEquals(finalOwner, args.multisig)) {
-      console.log(c.green('finalOwner Looks good! 😎'))
-    } else {
-      throw new Error('finalOwner looks wrong')
-    }
-    console.log()
+    printComparison(
+      'Validating that finalOwner address in the dictator matches multisig address',
+      'finalOwner',
+      finalOwner,
+      args.multisig
+    )
 
-    console.log('Validating the AddressManager address in the dictator:')
     const manager = await dictatorContract.manager()
-    if (hexStringEquals(manager, args.manager)) {
-      console.log(c.green('manager Looks good! 😎'))
-    } else {
-      throw new Error('manager looks wrong')
-    }
-    console.log()
+    printComparison(
+      'Validating the AddressManager address in the dictator',
+      'addressManager',
+      manager,
+      args.manager
+    )
 
     // TODO:
     // Get names and addresses from the Dictator.
